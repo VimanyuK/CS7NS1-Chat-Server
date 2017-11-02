@@ -1,37 +1,40 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov  1 15:59:54 2017
+# task to implimplement
+# 1.Join
+# 2.chat
+# 3.message
+# 4.leave
+# 5.Disconnect
 
-@author: Vimanyu
-"""
 
 import socket
+from threading import Thread
+import random
 import sys
- 
-HOST = ''   # Symbolic name, meaning all available interfaces
-PORT = 80 # Arbitrary non-privileged port
- 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+host = socket.gethostname()
+port = 80
 print ('Socket created')
  
 #Bind socket to local host and port
 try:
-    s.bind((HOST, PORT))
+    server.bind((host, port))
 except socket.error as msg:
     print ('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
-    sys.exit()
-     
+    sys.exit()     
 print ('Socket bind complete')
- 
+
+print(host)
+
 #Start listening on socket
-s.listen(10)
-print ('Socket now listening')
- 
-#now keep talking with the client
 while True:
-    #wait to accept a connection - blocking call
-    conn, addr = s.accept()
-    print ('Connected with ' + addr[0] + ':' + str(addr[1]))
-     
-s.close()
+    server.listen(5)
+    conn, ip = server.accept()
+    #monitoring connections
+    print("Connected to ",port,ip)
+
+
+
+
 
