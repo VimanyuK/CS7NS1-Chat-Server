@@ -6,8 +6,15 @@ Created on Wed Nov  1 16:47:41 2017
 """
 
 import socket
-HOST = socket.gethostname()
+host = socket.gethostname()
 clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-clientsocket.connect((HOST, 80))
-clientsocket.send('hello'.encode('utf-8') )
+
+clientsocket.connect((host, 5555))
+data = clientsocket.recv(2048)
+print (data)
+# to send message to the server
+msg = input("-->")
+clientsocket.send(msg.encode('utf-8') )
+
+clientsocket.close()
 
