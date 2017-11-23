@@ -62,15 +62,15 @@ def chat(conn_msg,conn):
     grp_end = conn_msg.find('\n'.encode('utf-8'), grp_start)
     
     group_name = conn_msg[grp_start:grp_end]
-    chat_text = 'CHAT: '.encode('utf-8') + str(clThread.roomID).encode('utf-8') + '\n'.encode('utf-8')
-    chat_text += 'CLIENT_NAME: '.encode('utf-8') +str(clThread.clientname.encode('utf-8')) + '\n'.encode('utf-8')
-    chat_text += 'MESSAGE: ' + chat_msg.encode('utf-8')
+    client_msg = 'CHAT: '.encode('utf-8') + str(clThread.roomID).encode('utf-8') + '\n'.encode('utf-8')
+    client_msg += 'CLIENT_NAME: '.encode('utf-8') +str(clThread.clientname.encode('utf-8')) + '\n'.encode('utf-8')
+    client_msg += 'MESSAGE: ' + chat_msg.encode('utf-8')
     if (group_name.decode('utf-8')) == 'g1':
         for x in range(len(g1_clients)):
-            g1_clients[x].send(chat_text)
+            g1_clients[x].send(client_msg)
     elif group_name == 'g2':
         for x in g2_clients:
-            g2_clients[x].send(chat_text)
+            g2_clients[x].send(client_msg)
 
 def check_msg(msg):
     if (msg.find('JOIN_CHATROOM'.encode('utf-8'))+1):
@@ -89,9 +89,43 @@ def check_msg(msg):
         return(6)
 
 def resp(msg,socket):
-    pass
+    msg_start = msg.find('HELO:'.encode('utf-8')) + 5
+    msg_end = msg.find('\n'.encode('utf-8'),msg_start)
+    
+    chat_msg = msg[msg_start:msg_end]
+    
+    response = "HELO: ".encode('utf-8') + chat_msg + "\n".encode('utf-8')
+    response += "IP: ".encode('utf-8') + str(clThread.ip).encode('utf-8') + "\n".encode('utf-8')
+    response += "PORT: ".encode('utf-8') + str(clThread.port).encode('utf-8') + "\n".encode('utf-8')
+    response += "StudentID: ".encode('utf-8') + "17307932".encode('utf-8') + "\n".encode('utf-8')
+    
+    socket.send(response)
+    
+    
 def leave(conn_msg,conn):
-    pass    
+    grp_start = conn_msg.find('LEAVE_CHATROOM:'.encode('utf-8')) + 16
+    grp_end = conn_msg.find('\n'.encode('utf-8'), grp_start) 
+    
+    group_name = conn_msg[grp_start:grp_end]
+    
+    response = "LEFT_CHATROOM".encode('utf-8') + group_name + "\n".encode('utf-8')
+    response += "JOIN_ID".encode('utf-8') + str(clThread.uid).encode('utf-8')
+    
+    grpmessage = "CLIENT_NAME:".encode('utf-8') + (clThread.clientname).encode('utf-8') + "\n".encode('utf-8')
+    grpmessage += "CLIENT_ID:".encode('utf-8') + str(clThread.uid).encode('utf-8') +"\n".encode('utf-8')
+    grpmessage += "LEFT GROUP".encode('utf-8')
+    print(group_name)
+    if (group_name.decode('utf-8')) == 'room1':
+        i = g1_clients.index(clThread.socket)
+        del g1_clients[i]
+        for x in g1_clients:
+            g1_clients[x].send(client_msg)
+    elif (group_name.decode('utf-8')) == 'room2':
+        i = g2_clients.index(clThread.socket)
+        del g2_clients[i]
+        for x in g2_clients:
+            g2_clients[x].send(client_msg)
+    conn.send(response)
 
 #creating threads for clients   
 class client_threads(Thread):
@@ -108,9 +142,7 @@ class client_threads(Thread):
 		self.roomID = ''
 	def run(self):
 		while True:
-			print("Starting again")
 			conn_msg = conn.recv(1024)
-			print('CM')
 			print(conn_msg)
 			cflag = check_msg(conn_msg)
 			if cflag == 1 : self.roomname,self.clientname,self.roomID = join(conn_msg,conn)
