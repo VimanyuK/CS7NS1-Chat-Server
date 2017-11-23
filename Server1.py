@@ -10,11 +10,11 @@ import socket
 from threading import Thread
 from threading import Lock
 import random
-import sys
+import sys,os
 
 threadLock = Lock()
 
-def join(conn_msg,csock):
+def join(conn_msg,conn):
     
     threadLock.acquire()
     gname = conn_msg.find('JOIN_CHATROOM:'.encode('utf-8'))+15
@@ -37,7 +37,7 @@ def join(conn_msg,csock):
     response += "PORT:".encode('utf-8') + str(port).encode('utf-8') + "\n".encode('utf-8')
     response += "ROOM_REF: ".encode('utf-8') + str(rID).encode('utf-8') +'\n'.encode('utf-8')
     response += "JOIN_ID: ".encode('utf-8') + str(clThread.uid).encode('utf-8') + "\n".encode('utf-8')
-    csock.send(response)
+    conn.send(response)
     grpmessage = "CHAT:".encode('utf-8') + str(rID).encode('utf-8') + "\n".encode('utf-8')
     grpmessage += "CLIENT_NAME:".encode('utf-8') + clientname + "\n".encode('utf-8') 
     grpmessage += "MESSAGE:".encode('utf-8') + clientname + "\n".encode('utf-8') 
@@ -53,18 +53,49 @@ def join(conn_msg,csock):
     return groupname,clientname,rID
 
 
-def chat(conn_msg,csock):
-    pass
+def chat(conn_msg,conn):
+    chat_msg_start = conn_msg.find('MESSAGE:'.encode('utf-8')) + 9
+    chat_msg_end = conn_msg.find('\n\n'.encode('utf-8'),chat_msg_start)
+    chat_msg = conn_msg[chat_msg_start:chat_msg_end]
+    
+    grp_start = conn_msg.find('CHAT:'.encode('utf-8')) + 6 
+    grp_end = conn_msg.find('\n'.encode('utf-8'), grp_start)
+    
+    group_name = conn_msg[grp_start:grp_end]
+    chat_text = 'CHAT: '.encode('utf-8') + str(clThread.roomID).encode('utf-8') + '\n'.encode('utf-8')
+    chat_text += 'CLIENT_NAME: '.encode('utf-8') +str(clThread.clientname.encode('utf-8')) + '\n'.encode('utf-8')
+    chat_text += 'MESSAGE: ' + chat_msg.encode('utf-8')
+    if (group_name.decode('utf-8')) == 'g1':
+        for x in range(len(g1_clients)):
+            g1_clients[x].send(chat_text)
+    elif group_name == 'g2':
+        for x in g2_clients:
+            g2_clients[x].send(chat_text)
+
+def check_msg(msg):
+    if (msg.find('JOIN_CHATROOM'.encode('utf-8'))+1):
+        return(1)	
+    elif (msg.find('LEAVE_CHATROOM'.encode('utf-8'))+1):
+        return(2)
+    elif (msg.find('DISCONNECT'.encode('utf-8'))+1):
+        return(3)
+    elif (msg.find('CHAT:'.encode('utf-8'))+1):
+        return(4)
+    elif (msg.find('KILL_SERVICE'.encode('utf-8'))+1):
+        os._exit(1)
+    elif (msg.find('HELO'.encode('utf-8'))+1):
+        return(5)
+    else:
+        return(6)
+
 def resp(msg,socket):
     pass
-def leave(conn_msg,csock):
-    pass
-def check_msg(msg):
-    pass
+def leave(conn_msg,conn):
+    pass    
 
 #creating threads for clients   
 class client_threads(Thread):
-
+#initilizing the client thread.
 	def __init__(self,ip,port,socket):
 		Thread.__init__(self)
 		self.ip = ip
