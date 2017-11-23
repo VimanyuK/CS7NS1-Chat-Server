@@ -12,6 +12,19 @@ from threading import Lock
 import random
 import sys
 
+threadLock = Lock()
+
+def join(conn_msg,csock):
+    pass
+def chat(conn_msg,csock):
+    pass
+def resp(msg,socket):
+    pass
+def leave(conn_msg,csock):
+    pass
+def check_msg(msg):
+    pass
+
 #creating threads for clients   
 class client_threads(Thread):
 
@@ -25,6 +38,24 @@ class client_threads(Thread):
 		self.roomname = ''
 		self.clientname = ''
 		self.roomID = ''
+	def run(self):
+		while True:
+			print("Starting again")
+			conn_msg = conn.recv(1024)
+			print('CM')
+			print(conn_msg)
+			cflag = check_msg(conn_msg)
+			if cflag == 1 : self.roomname,self.clientname,self.roomID = join(conn_msg,conn)
+			elif cflag == 2 : leave(conn_msg,conn)
+			elif cflag == 3 : return(0)
+			elif cflag == 4 : chat(conn_msg,conn)
+			elif cflag == 5 : resp(conn_msg,conn)
+			else : print('Error code. Wait for more')
+			self.chatroom.append(self.roomname)
+			print('Total clients in group g1: ')
+			print(len(g1_clients))
+			print('Total clients in group g2: ')
+			print(len(g2_clients))
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
