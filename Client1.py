@@ -1,29 +1,48 @@
 import socket 
-import sys,os
+import os
 from threading import Thread
 
 # client side functions to respond to the server
 def join():
     chatroom = input('chatroom: ')
+    #concatenating the client details to send it to the server
     conn_msg = "JOIN_CHATROOM:".encode('utf-8') + chatroom.encode('utf-8') + "\n".encode('utf-8')
     conn_msg += "CLIENT IP: \n".encode('utf-8')
     conn_msg += "PORT: \n".encode('utf-8')
     conn_msg += "CLIENT_NAME:".encode('utf-8') + client_name.encode('utf-8') + "\n".encode('utf-8')
+    #to send the client details to the server side
     clientsocket.send(conn_msg)
     
 def chat(s):
+    # taking the input from the user to send a message to a specific chatroom
     chat_room = input('Which room to send message? ')
     chat_message = input('Enter Message to send: ')
-    msg = "CHAT: ".encode('utf-8') + chat_room.encode('utf-8') + "\n".encode('utf-8')
-    msg += "JOIN_ID: ".encode('utf-8') + str(jID).encode('utf-8') + "\n".encode('utf-8')
-    msg += "CLIENT_NAME: ".encode('utf-8') + client_name.encode('utf-8') + "\n".encode('utf-8')
-    msg += "MESSAGE: ".encode('utf-8') + chat_message.encode('utf-8') + "\n\n".encode('utf-8')
-    s.send(msg)
+    #concatenating the client details with the message to send it to the server.
+    message = "CHAT: ".encode('utf-8') + chat_room.encode('utf-8') + "\n".encode('utf-8')
+    message+= "JOIN_ID: ".encode('utf-8') + str(jID).encode('utf-8') + "\n".encode('utf-8')
+    message+= "CLIENT_NAME: ".encode('utf-8') + client_name.encode('utf-8') + "\n".encode('utf-8')
+    message+= "MESSAGE: ".encode('utf-8') + chat_message.encode('utf-8') + "\n\n".encode('utf-8')
+    #to send the message to the server side
+    clientsocket.send(message)
     
 def leave():
-    pass
+    #asking the user which chatroom to leave and send the message across to the server side.
+    leave_room = input('Room to Leave ')
+    message = "LEAVE_CHATROOM: ".encode('utf-8') + leave_room.encode('utf-8') + "\n".encode('utf-8')
+    message+= "JOIN_ID: ".encode('utf-8') + jID.encode('utf-8') + "\n".encode('utf-8')
+    message+= "CLIENT_NAME: ".encode('utf-8') + client_name.encode('utf-8')
+    clientsocket.send(message)	
+
 def disconnect():
-    pass
+    #sending the disconnect message to disconnect from the server and close the socket
+    #sending the required acknowledgement so that the server identifies and disconnects 
+    message= "DISCONNECT: \n".encode('utf-8')
+    message+= "PORT: \n".encode('utf-8')
+    message+= "CLIENT_NAME: ".encode('utf-8') + client_name.encode('utf-8') + "\n".encode('utf-8')
+    clientsocket.send(message)
+    clientsocket.close()
+    os._exit(1)
+
 #client thread
 class Client_Thread(Thread):
     def __init__(self,socket):
