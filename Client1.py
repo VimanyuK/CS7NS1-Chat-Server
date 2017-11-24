@@ -4,9 +4,22 @@ from threading import Thread
 
 # client side functions to respond to the server
 def join():
-    pass
-def chat():
-    pass
+    chatroom = input('chatroom: ')
+    conn_msg = "JOIN_CHATROOM:".encode('utf-8') + chatroom.encode('utf-8') + "\n".encode('utf-8')
+    conn_msg += "CLIENT IP: \n".encode('utf-8')
+    conn_msg += "PORT: \n".encode('utf-8')
+    conn_msg += "CLIENT_NAME:".encode('utf-8') + client_name.encode('utf-8') + "\n".encode('utf-8')
+    clientsocket.send(conn_msg)
+    
+def chat(s):
+    chat_room = input('Which room to send message? ')
+    chat_message = input('Enter Message to send: ')
+    msg = "CHAT: ".encode('utf-8') + chat_room.encode('utf-8') + "\n".encode('utf-8')
+    msg += "JOIN_ID: ".encode('utf-8') + str(jID).encode('utf-8') + "\n".encode('utf-8')
+    msg += "CLIENT_NAME: ".encode('utf-8') + client_name.encode('utf-8') + "\n".encode('utf-8')
+    msg += "MESSAGE: ".encode('utf-8') + chat_message.encode('utf-8') + "\n\n".encode('utf-8')
+    s.send(msg)
+    
 def leave():
     pass
 def disconnect():
