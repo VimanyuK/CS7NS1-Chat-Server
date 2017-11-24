@@ -12,19 +12,23 @@ from threading import Lock
 import random
 import sys,os
 
+#to enable thread lock for one client at a time
 threadLock = Lock()
 
 def join(conn_msg,conn):
-    
+    #to lock the thread for the joined client
     threadLock.acquire()
-    gname = conn_msg.find('JOIN_CHATROOM:'.encode('utf-8'))+15
+    #Searching and identifying the acknowledgement received from the client for the JOIN CHATROOM and end of line 
+    gname = conn_msg.find('JOIN_CHATROOM:'.encode('utf-8'))+14
     gname_end = conn_msg.find('\n'.encode('utf-8'))
     groupname = conn_msg[gname:gname_end]
-    
+    #Searching and identifying the client name in the acknowledgement received from the client
     cname = conn_msg.find('CLIENT_NAME'.encode('utf-8'))+13
     cname_end = conn_msg.find(' '.encode('utf-8'),cname)
     clientname = conn_msg[cname:cname_end]
     rID = 0
+    print(groupname)
+    #assigning room IDs to the connected clients
     if (groupname.decode('utf-8')) == 'room1' :
         g1_clients.append(clThread.socket)
         rID = 1001
@@ -49,11 +53,11 @@ def join(conn_msg,conn):
     elif (groupname.decode('utf-8')) == 'room2':
         for x in range(len(g2_clients)):
             g2_clients[x].send(grpmessage)
-        threadLock.release()
+    threadLock.release()
     return groupname,clientname,rID
 
-
 def chat(conn_msg,conn):
+    threadLock.acquire()
     chat_msg_start = conn_msg.find('MESSAGE:'.encode('utf-8')) + 9
     chat_msg_end = conn_msg.find('\n\n'.encode('utf-8'),chat_msg_start)
     chat_msg = conn_msg[chat_msg_start:chat_msg_end]
@@ -62,15 +66,16 @@ def chat(conn_msg,conn):
     grp_end = conn_msg.find('\n'.encode('utf-8'), grp_start)
     
     group_name = conn_msg[grp_start:grp_end]
-    client_msg = 'CHAT: '.encode('utf-8') + str(clThread.roomID).encode('utf-8') + '\n'.encode('utf-8')
-    client_msg += 'CLIENT_NAME: '.encode('utf-8') +str(clThread.clientname.encode('utf-8')) + '\n'.encode('utf-8')
-    client_msg += 'MESSAGE: ' + chat_msg.encode('utf-8')
-    if (group_name.decode('utf-8')) == 'g1':
+    client_msg = "CHAT: ".encode('utf-8') + str(clThread.roomID).encode('utf-8') + "\n".encode('utf-8')
+    client_msg += "CLIENT_NAME: ".encode('utf-8') +str(clThread.clientname).encode('utf-8') + "\n".encode('utf-8')
+    client_msg += "MESSAGE: ".encode('utf-8') + str(chat_msg).encode('utf-8')
+    if (group_name.decode('utf-8')) == 'room1':
         for x in range(len(g1_clients)):
             g1_clients[x].send(client_msg)
-    elif group_name == 'g2':
+    elif group_name == 'room2':
         for x in g2_clients:
             g2_clients[x].send(client_msg)
+    threadLock.release()
 
 def check_msg(msg):
     if (msg.find('JOIN_CHATROOM'.encode('utf-8'))+1):
@@ -97,12 +102,13 @@ def resp(msg,socket):
     response = "HELO: ".encode('utf-8') + chat_msg + "\n".encode('utf-8')
     response += "IP: ".encode('utf-8') + str(clThread.ip).encode('utf-8') + "\n".encode('utf-8')
     response += "PORT: ".encode('utf-8') + str(clThread.port).encode('utf-8') + "\n".encode('utf-8')
-    response += "StudentID: ".encode('utf-8') + "17307932".encode('utf-8') + "\n".encode('utf-8')
+    response += "StudentID: ".encode('utf-8') + "17311910".encode('utf-8') + "\n".encode('utf-8')
     
     socket.send(response)
     
     
 def leave(conn_msg,conn):
+    threadLock.acquire()
     grp_start = conn_msg.find('LEAVE_CHATROOM:'.encode('utf-8')) + 16
     grp_end = conn_msg.find('\n'.encode('utf-8'), grp_start) 
     
@@ -111,7 +117,7 @@ def leave(conn_msg,conn):
     response = "LEFT_CHATROOM".encode('utf-8') + group_name + "\n".encode('utf-8')
     response += "JOIN_ID".encode('utf-8') + str(clThread.uid).encode('utf-8')
     
-    grpmessage = "CLIENT_NAME:".encode('utf-8') + (clThread.clientname).encode('utf-8') + "\n".encode('utf-8')
+    grpmessage = "CLIENT_NAME:".encode('utf-8') + str(clThread.clientname).encode('utf-8') + "\n".encode('utf-8')
     grpmessage += "CLIENT_ID:".encode('utf-8') + str(clThread.uid).encode('utf-8') +"\n".encode('utf-8')
     grpmessage += "LEFT GROUP".encode('utf-8')
     print(group_name)
@@ -126,6 +132,7 @@ def leave(conn_msg,conn):
         for x in g2_clients:
             g2_clients[x].send(client_msg)
     conn.send(response)
+    threadLock.release()
 
 #creating threads for clients   
 class client_threads(Thread):
@@ -173,6 +180,7 @@ g1_clients = []
 g2_clients = []
 print('Server started')
 print("Host name: ",host)
+print("Port number: ", port)
 
 #Start listening on socket
 while True:
